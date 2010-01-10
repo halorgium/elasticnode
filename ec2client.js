@@ -77,7 +77,7 @@ ec2client.prototype.queryEC2 = function (action, params, callback) {
     "Connection": "close"
   };
   var client = this;
-  var request = http.createClient(50000, "localhost").post("/", headers);
+  var request = http.createClient(50000, "localhost").request("POST", "/", headers);
 
   request.sendBody(queryParams);
   request.finish(function (response) {
