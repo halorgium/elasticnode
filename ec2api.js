@@ -32,7 +32,7 @@ ec2api.prototype.setRegion = function(name) {
 
 ec2api.prototype.describeAddresses = function (callback) {
   this.client.queryEC2("DescribeAddresses", [], function (value) {
-    var doc = libxml.parseString(value.body);
+    var doc = libxml.parseXmlString(value.body);
     var items = doc.at("addressesSet").find("*");
     var addresses = [];
     for (var i in items) {
@@ -49,7 +49,7 @@ ec2api.prototype.describeAddresses = function (callback) {
 
 ec2api.prototype.allocateAddress = function (callback) {
   this.client.queryEC2("AllocateAddress", [], function (value) {
-    var doc = libxml.parseString(value.body);
+    var doc = libxml.parseXmlString(value.body);
     var address = new ec2models.AddressMapping(doc.at("publicIp").text());
     callback({address: address});
   });
@@ -57,14 +57,14 @@ ec2api.prototype.allocateAddress = function (callback) {
 
 ec2api.prototype.releaseAddress = function (address, callback) {
   this.client.queryEC2("ReleaseAddress", [['PublicIp', address]], function (value) {
-    var doc = libxml.parseString(value.body);
+    var doc = libxml.parseXmlString(value.body);
     var ok = doc.at("return").text();
     callback({ok: ok == "true"});
   });
 };
 
 ec2api.prototype.errback = function (value) {
-  var doc = libxml.parseString(value.body);
+  var doc = libxml.parseXmlString(value.body);
   var errorNode = doc.at("Errors").at("Error");
   sys.puts("error: ");
   sys.puts(errorNode.at("Code").text());
