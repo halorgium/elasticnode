@@ -62,7 +62,7 @@ ec2client.prototype.queryEC2 = function (action, params, callback) {
   log("Sig ["+sig+"]");
 
   queryParams += "&Signature="+encodeURIComponent(sig);
-  var url = this.serviceURL + "/";
+  var url = this.serviceURL() + "/";
 
   log("URL ["+url+"]");
   log("QueryParams ["+queryParams+"]");
@@ -76,16 +76,17 @@ ec2client.prototype.queryEC2 = function (action, params, callback) {
     "Content-Length": queryParams.length,
     "Connection": "close"
   };
-  var client = this;
-  var request = http.createClient(50000, "localhost").request("POST", "/", headers);
+  var _this = this;
+  var client = http.createClient(443, this.region().host);
+  client.setSecure("x509_PEM");
 
-  request.sendBody(queryParams);
-  request.finish(function (response) {
+  var request = client.request("POST", "/", headers);
+  request.addListener('response', function (response) {
     var body = "";
-    response.addListener("body", function (chunk) {
+    response.addListener("data", function (chunk) {
       body += chunk;
     });
-    response.addListener("complete", function () {
+    response.addListener("end", function () {
       log("complete: statusCode: " + response.statusCode + ", body: " + body);
       var ok = response.statusCode >= 200 && response.statusCode < 300;
       var value = {
@@ -98,12 +99,18 @@ ec2client.prototype.queryEC2 = function (action, params, callback) {
         callback(value);
       }
       else {
-        client.api.errback(value);
+        _this.api.errback(value);
       }
     });
   });
+  request.write(queryParams);
+  request.close();
 
   return true;
+};
+
+ec2client.prototype.serviceURL = function() {
+  return "https://" + this.region().host;
 };
 
 ec2client.prototype.sigParamCmp = function(x, y) {
